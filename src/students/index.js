@@ -16,8 +16,6 @@ const students = JSON.parse(fileAsAString);
 const fileAsAJSON = JSON.parse(fileAsAString); // converts string into JSON
 
 router.get("/", (reg, res) => {
-  console.log("get route");
-
   res.send(fileAsAJSON);
 });
 
@@ -36,6 +34,34 @@ router.post("/", (req, res) => {
   fs.writeFileSync(studentsJSONPath, JSON.stringify(students));
 
   res.status(201).send({ id: newStudent.ID });
+});
+
+router.put("/:id", (req, res) => {
+  const newStudentsArray = students.filter(
+    (student) => student.ID !== req.params.id
+  );
+
+  const modifiedUser = req.body;
+  modifiedUser.ID = req.params.id;
+
+  newStudentsArray.push(modifiedUser);
+
+  fs.writeFileSync(studentsJSONPath, JSON.stringify(newStudentsArray));
+
+  res.send({ data: "HELLO FROM PUT ROUTE!" });
+});
+
+router.delete("/:id", (req, res) => {
+  const newStudentsArray = students.filter(
+    (student) => student.ID !== req.params.id
+  );
+
+  // 3. save the file with the new content
+
+  fs.writeFileSync(studentsJSONPath, JSON.stringify(newStudentsArray));
+
+  // 4. send back a proper response
+  res.status(204).send();
 });
 
 export default router;
