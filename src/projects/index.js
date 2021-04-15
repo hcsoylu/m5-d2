@@ -1,31 +1,20 @@
 import express from "express";
 import { check, validationResult } from "express-validator";
-import fs from "fs";
-import { fileURLToPath } from "url";
-import { dirname, join } from "path";
+
 import uniqid from "uniqid";
+import { getProjects, writeProjects } from "../lib/fs-tools.js";
 
 const router = express.Router();
 
-const filename = fileURLToPath(import.meta.url);
-const studentsJSONPath = join(dirname(filename), "projects.json");
-
-const getProjects = () => {
-  const fileAsABuffer = fs.readFileSync(studentsJSONPath);
-  const fileAsAString = fileAsABuffer.toString();
-  const projects = JSON.parse(fileAsAString);
-  return projects;
-};
-
-router.get("/", (req, res) => {
-  const projects = getProjects();
+router.get("/", async (req, res) => {
+  const projects = await getProjects();
 
   res.status(200).send(projects);
 });
 
-router.get("/:id", (req, res, next) => {
+router.get("/:id", async (req, res, next) => {
   try {
-    const projects = getProjects();
+    const projects = await getProjects();
     const project = projects.filter(
       (project) => project.projectId === req.params.id
     );
@@ -49,12 +38,12 @@ router.post(
     check("repoURL").exists().isURL().withMessage("insert a valid URL!!"),
     check("liveURL").exists().isURL().withMessage("insert a live URL!!"),
   ],
-  (req, res, next) => {
+  async (req, res, next) => {
     try {
       const errors = validationResult(req);
 
       if (errors.isEmpty()) {
-        const projects = getProjects();
+        const projects = await getProjects();
         const newProject = {
           ...req.body,
           projectId: uniqid(),
@@ -62,10 +51,9 @@ router.post(
           createdAt: new Date(),
         };
         projects.push(newProject);
-        fs.writeFileSync(
-          join(dirname(filename), "projects.json"),
-          JSON.stringify(projects)
-        );
+
+        await writeProjects(projects);
+
         res.status(201).send(newProject);
       } else {
         const err = new Error();
@@ -80,9 +68,9 @@ router.post(
   }
 );
 
-router.put("/:id", (req, res, next) => {
+router.put("/:id", async (req, res, next) => {
   try {
-    const projects = getProjects();
+    const projects = await getProjects();
     const newArrayOfProjects = projects.filter(
       (project) => project.projectId !== req.params.id
     );
@@ -95,10 +83,7 @@ router.put("/:id", (req, res, next) => {
     if (editedProject.projectId === req.params.id) {
       newArrayOfProjects.push(editedProject);
 
-      fs.writeFileSync(
-        join(dirname(filename), "projects.json"),
-        JSON.stringify(newArrayOfProjects)
-      );
+      await writeProjects(newArrayOfProjects);
 
       res.send(editedProject);
     } else {
@@ -109,16 +94,15 @@ router.put("/:id", (req, res, next) => {
   }
 });
 
-router.delete("/:id", (req, res, next) => {
+router.delete("/:id", async (req, res, next) => {
   try {
-    const projects = getProjects();
+    const projects = await getProjects();
     const filteredProjects = projects.filter(
       (project) => project.projectId !== req.params.id
     );
-    fs.writeFileSync(
-      join(dirname(filename), "projects.json"),
-      JSON.stringify(filteredProjects)
-    );
+
+    await writeProjects(filteredProjects);
+
     res.status(204).send(projects);
   } catch (error) {
     next(error);

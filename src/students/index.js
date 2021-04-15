@@ -1,42 +1,37 @@
 import express from "express";
-import fs from "fs";
-import { fileURLToPath } from "url";
-import { dirname, join } from "path";
 import uniqid from "uniqid";
+import { getStudents, writeStudents } from "../lib/fs-tools.js";
 
 const router = express.Router();
 
-const filename = fileURLToPath(import.meta.url);
-const studentsJSONPath = join(dirname(filename), "students.json");
-
-const fileAsABuffer = fs.readFileSync(studentsJSONPath); // returns a buffer (machine readable, not human readable)
-
-const fileAsAString = fileAsABuffer.toString(); // returns a string from a buffer
-const students = JSON.parse(fileAsAString);
-const fileAsAJSON = JSON.parse(fileAsAString); // converts string into JSON
-
-router.get("/", (reg, res) => {
-  res.send(fileAsAJSON);
+router.get("/", async (reg, res) => {
+  const students = await getStudents();
+  res.send(students);
 });
 
-router.get("/:identifier", (req, res) => {
+router.get("/:identifier", async (req, res) => {
+  const students = await getStudents();
   const student = students.find((s) => s.ID === req.params.identifier);
   res.send(student);
 });
 
-router.post("/", (req, res) => {
+router.post("/", async (req, res) => {
   const newStudent = req.body;
 
   newStudent.ID = uniqid();
 
+  const students = await getStudents();
+
   students.push(newStudent);
 
-  fs.writeFileSync(studentsJSONPath, JSON.stringify(students));
+  await writeStudents(students);
 
   res.status(201).send({ id: newStudent.ID });
 });
 
-router.put("/:id", (req, res) => {
+router.put("/:id", async (req, res) => {
+  const students = await getStudents();
+
   const newStudentsArray = students.filter(
     (student) => student.ID !== req.params.id
   );
@@ -46,19 +41,21 @@ router.put("/:id", (req, res) => {
 
   newStudentsArray.push(modifiedUser);
 
-  fs.writeFileSync(studentsJSONPath, JSON.stringify(newStudentsArray));
+  await writeStudents(students);
 
   res.send({ data: "HELLO FROM PUT ROUTE!" });
 });
 
-router.delete("/:id", (req, res) => {
+router.delete("/:id", async (req, res) => {
+  const students = await getStudents();
+
   const newStudentsArray = students.filter(
     (student) => student.ID !== req.params.id
   );
 
   // 3. save the file with the new content
 
-  fs.writeFileSync(studentsJSONPath, JSON.stringify(newStudentsArray));
+  await writeStudents(newStudents);
 
   // 4. send back a proper response
   res.status(204).send();
