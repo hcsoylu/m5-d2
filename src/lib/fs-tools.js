@@ -1,34 +1,38 @@
 import fs from "fs-extra";
 import { fileURLToPath } from "url";
 import { dirname, join } from "path";
-const { readJSON, writeJSON, writeFile, createReadStream } = fs;
+const { readJSON, writeJSON, writeFile } = fs;
 
-const dataFolderPath = join(dirname(fileURLToPath(import.meta.url)), "../data");
-
-const studentsFolderPath = join(
-  dirname(fileURLToPath(import.meta.url)),
+/* leggo e collego il mio file json */
+const __currentPath = fileURLToPath(import.meta.url);
+const __currentDirname = dirname(__currentPath);
+const __dataFolderPath = join(__currentDirname, "../data");
+const studentIMGfolderPath = join(
+  __currentDirname,
   "../../public/img/students"
 );
 
-const projectsFolderPath = join(
-  dirname(fileURLToPath(import.meta.url)),
-  "../../public/img/projects"
-);
+/* prendo il path degli students */
+// console.log(__dataFolderPath);
 
 export const getStudents = async () =>
-  await readJSON(join(dataFolderPath, "students.json"));
+  await readJSON(join(__dataFolderPath, "students.json"));
 
 export const getProjects = async () =>
-  await readJSON(join(dataFolderPath, "projects.json"));
+  await readJSON(join(__dataFolderPath, "projects.json"));
 
-export const writeStudents = async () =>
-  await writeJSON(join(dataFolderPath, "students.json"));
+export const getReviews = async () =>
+  await readJSON(join(__dataFolderPath, "reviews.json"));
 
-export const writeProjects = async () =>
-  await writeJSON(join(dataFolderPath, "projects.json"));
+export const writeProjects = async (projectsArr) =>
+  await writeJSON(join(__dataFolderPath, "projects.json"), projectsArr);
 
-export const getCurrentFolderPatch = (currentFİle) =>
-  dirname(fileURLToPath(currentFİle));
+export const writeStudents = async (studentsArr) =>
+  await writeJSON(join(__dataFolderPath, "students.json"), studentsArr);
 
-export const writeStudentsPictures = async (filename, content) =>
-  await writeFile(join(studentsFolderPath, filename), content);
+export const writeReviews = async (reviewsArr) =>
+  await writeJSON(join(__dataFolderPath, "reviews.json"), reviewsArr);
+
+export const writeProfilePicture = async (fileName, content) => {
+  await writeFile(join(studentIMGfolderPath, fileName), content);
+};
